@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asset Analyst</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #101014;
+        --slate: #2c2f3a;
+        --muted: #6a6f7f;
+        --cream: #f4f1ec;
+        --sand: #efe6db;
+        --accent: #d97745;
+        --accent-dark: #b75f34;
+        --sea: #1f6f78;
+        --card: rgba(255, 255, 255, 0.72);
+        --stroke: rgba(16, 16, 20, 0.12);
+        --shadow: 0 24px 50px rgba(16, 16, 20, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 800px at 15% -10%, #fff5e8 0%, transparent 60%),
+          radial-gradient(900px 700px at 110% 10%, #e3f2f4 0%, transparent 55%),
+          linear-gradient(160deg, #f7f2ea 0%, #efe7dc 50%, #f3ece4 100%);
+        min-height: 100vh;
+      }
+
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 36px 24px 80px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 10px 0 32px;
+      }
+
+      .logo {
+        font-size: 1.1rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+
+      .nav {
+        display: flex;
+        gap: 20px;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .nav a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 32px;
+        align-items: center;
+        padding: 32px 0 48px;
+      }
+
+      .hero h1 {
+        font-family: "Playfair Display", "Times New Roman", serif;
+        font-size: clamp(2.4rem, 4vw, 3.6rem);
+        line-height: 1.05;
+        margin: 0 0 18px;
+      }
+
+      .hero p {
+        font-size: 1.05rem;
+        color: var(--muted);
+        margin: 0 0 28px;
+      }
+
+      .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .btn {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(217, 119, 69, 0.35);
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-dark);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: var(--slate);
+        border: 1px solid var(--stroke);
+      }
+
+      .ticker-card {
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(6px);
+      }
+
+      .ticker-card h3 {
+        margin: 0 0 12px;
+        font-size: 1.1rem;
+      }
+
+      .ticker-form {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .ticker-form input {
+        flex: 1 1 180px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--stroke);
+        font-size: 0.95rem;
+        background: #fff;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--stroke);
+        border-radius: 16px;
+        padding: 18px 18px 20px;
+        box-shadow: 0 12px 30px rgba(15, 22, 32, 0.08);
+        backdrop-filter: blur(6px);
+      }
+
+      .card h4 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .section-title {
+        font-family: "Playfair Display", "Times New Roman", serif;
+        font-size: 1.8rem;
+        margin: 56px 0 12px;
+      }
+
+      .pipeline {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .step {
+        padding: 14px;
+        border-radius: 14px;
+        background: #fff;
+        border: 1px dashed var(--stroke);
+        font-size: 0.9rem;
+        color: var(--slate);
+      }
+
+      .report-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        align-items: center;
+        margin-top: 18px;
+      }
+
+      .mock {
+        border-radius: 18px;
+        padding: 18px;
+        background:
+          linear-gradient(160deg, rgba(31, 111, 120, 0.12), rgba(217, 119, 69, 0.08)),
+          #fff;
+        border: 1px solid rgba(31, 111, 120, 0.2);
+        min-height: 220px;
+      }
+
+      .mock h5 {
+        margin: 0 0 8px;
+      }
+
+      .mock ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .viewer {
+        display: none;
+        margin-top: 16px;
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 16px 30px rgba(16, 16, 20, 0.12);
+        overflow: hidden;
+      }
+
+      .viewer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #f6f6f6;
+        border-bottom: 1px solid var(--stroke);
+        font-size: 0.9rem;
+      }
+
+      .viewer-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        border-top: 1px solid var(--stroke);
+        background: #fafafa;
+      }
+
+      .viewer iframe {
+        width: 100%;
+        height: 520px;
+        border: none;
+      }
+
+      footer {
+        margin-top: 60px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .fade-in {
+        animation: fade 0.8s ease forwards;
+        opacity: 0;
+      }
+
+      .delay-1 { animation-delay: 0.1s; }
+      .delay-2 { animation-delay: 0.2s; }
+      .delay-3 { animation-delay: 0.3s; }
+      .delay-4 { animation-delay: 0.4s; }
+
+      @keyframes fade {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @media (max-width: 700px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .nav {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="logo">Asset Analyst</div>
+        <nav class="nav">
+          <a href="#overview">Overview</a>
+          <a href="#pipeline">Pipeline</a>
+          <a href="#report">Report</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <h1 class="fade-in">Valutazioni chiare, report credibili.</h1>
+          <p class="fade-in delay-1">
+            Asset Analyst trasforma i bilanci pubblici in un report professionale,
+            con metriche spiegate in modo semplice, scenari di valuation e grafici
+            pronti da condividere.
+          </p>
+          <div class="cta fade-in delay-2">
+            <span style="color: var(--muted); font-size: 0.95rem;">
+              Inserisci un ticker e avvia l'analisi.
+            </span>
+          </div>
+        </div>
+        <div class="ticker-card fade-in delay-3">
+          <h3>Avvia una nuova analisi</h3>
+          <p>Inserisci un ticker per creare un report PDF completo.</p>
+          <form class="ticker-form" onsubmit="return analyzeTicker(event);">
+            <input type="text" placeholder="Es. SBUX" aria-label="Ticker" id="tickerInput" />
+            <button class="btn btn-primary" type="submit" id="analyzeBtn">Analizza</button>
+          </form>
+          <p id="status" style="margin: 10px 0 0; color: var(--muted); font-size: 0.9rem;"></p>
+          <div class="viewer" id="reportViewer">
+            <div class="viewer-header">
+              <span id="viewerTitle">Report PDF</span>
+              <button class="btn btn-secondary" type="button" onclick="closeViewer()">Chiudi</button>
+            </div>
+            <iframe id="reportFrame" title="Report PDF"></iframe>
+            <div class="viewer-actions">
+              <a class="btn btn-primary" id="downloadLink" href="#" download>Scarica PDF</a>
+              <a class="btn btn-secondary" id="openLink" href="#" target="_blank" rel="noopener">Apri in nuova finestra</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="overview">
+        <h2 class="section-title">Perche funziona</h2>
+        <div class="grid">
+          <div class="card fade-in">
+            <h4>Metriche spiegate</h4>
+            <p>Ogni indicatore ha una descrizione chiara, pensata per chi non e esperto.</p>
+          </div>
+          <div class="card fade-in delay-1">
+            <h4>Scenari di valuation</h4>
+            <p>Bear, Base, Bull con assunzioni esplicite su crescita e tassi.</p>
+          </div>
+          <div class="card fade-in delay-2">
+            <h4>Output professionale</h4>
+            <p>PDF con tabelle, grafici e sintesi esecutiva.</p>
+          </div>
+          <div class="card fade-in delay-3">
+            <h4>Pipeline trasparente</h4>
+            <p>Dati raw, cleaning, metriche e rating sono sempre tracciabili.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <h2 class="section-title">Pipeline</h2>
+        <div class="pipeline">
+          <div class="step">1. Ingestion bilanci + prezzi</div>
+          <div class="step">2. Cleaning & normalizzazione</div>
+          <div class="step">3. Metriche fondamentali</div>
+          <div class="step">4. Scoring & rating</div>
+          <div class="step">5. Report PDF</div>
+        </div>
+      </section>
+
+      <section id="report">
+        <h2 class="section-title">Dentro il report</h2>
+        <div class="report-preview">
+          <div class="mock">
+            <h5>Investment Snapshot</h5>
+            <ul>
+              <li>Fair value per-share</li>
+              <li>Upside/downside</li>
+              <li>Rating sintetico</li>
+            </ul>
+          </div>
+          <div class="mock">
+            <h5>Quality & Risk</h5>
+            <ul>
+              <li>Profitability e Growth</li>
+              <li>Financial strength</li>
+              <li>Rischi di mercato</li>
+            </ul>
+          </div>
+          <div class="mock">
+            <h5>Valuation Scenarios</h5>
+            <ul>
+              <li>Bear/Base/Bull</li>
+              <li>Assunzioni esplicite</li>
+              <li>Grafici dedicati</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer>Asset Analyst · Report professionali basati su dati pubblici</footer>
+    </div>
+    <script>
+      function analyzeTicker(event) {
+        event.preventDefault();
+        var input = document.getElementById("tickerInput");
+        var status = document.getElementById("status");
+        var button = document.getElementById("analyzeBtn");
+        if (!input || !status || !button) return false;
+
+        var ticker = (input.value || "").trim().toUpperCase();
+        var valid = /^[A-Z0-9.-]{1,10}$/.test(ticker);
+        if (!valid) {
+          status.textContent = "Inserisci un ticker valido (es. AAPL, SBUX).";
+          input.focus();
+          return false;
+        }
+
+        status.textContent = "Analisi in corso, attendi...";
+        button.disabled = true;
+
+        fetch("/analyze?ticker=" + encodeURIComponent(ticker), { method: "POST" })
+          .then(function (response) {
+            if (!response.ok) {
+              return response.json().then(function (data) {
+                throw new Error(data.detail || "Errore durante l'analisi.");
+              });
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            status.textContent = "Report pronto.";
+            var url = data.report_url + "?v=" + Date.now();
+            openViewer(ticker, url);
+          })
+          .catch(function (err) {
+            status.textContent = err.message || "Errore inatteso.";
+          })
+          .finally(function () {
+            button.disabled = false;
+          });
+
+        return false;
+      }
+
+      function openViewer(ticker, url) {
+        var viewer = document.getElementById("reportViewer");
+        var frame = document.getElementById("reportFrame");
+        var title = document.getElementById("viewerTitle");
+        var downloadLink = document.getElementById("downloadLink");
+        var openLink = document.getElementById("openLink");
+        if (!viewer || !frame || !title || !downloadLink || !openLink) return;
+        title.textContent = "Report PDF · " + ticker;
+        frame.src = url;
+        downloadLink.href = url;
+        openLink.href = url;
+        viewer.style.display = "block";
+        viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function closeViewer() {
+        var viewer = document.getElementById("reportViewer");
+        var frame = document.getElementById("reportFrame");
+        if (!viewer || !frame) return;
+        frame.src = "";
+        viewer.style.display = "none";
+      }
+    </script>
+  </body>
+</html>

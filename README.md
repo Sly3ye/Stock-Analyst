@@ -50,6 +50,19 @@ python main.py
 
 Il report sara salvato in `reports/<TICKER>_report.pdf`.
 
+## Frontend + API (FastAPI)
+Avvia il backend FastAPI per collegare la pagina frontend alla pipeline:
+```
+uvicorn server:app --reload
+```
+
+Poi apri:
+```
+http://127.0.0.1:8000/
+```
+
+Inserisci il ticker e premi "Analizza". Il server esegue `main.py` e apre il PDF.
+
 ## Note su metriche e assunzioni
 - Le valutazioni sono per-share e dipendono da assunzioni conservative su crescita,
   tasso di sconto e multipli.

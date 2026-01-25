@@ -8,12 +8,16 @@ from src.reporting.assembler import ReportAssembler
 import yfinance as yf
 import pandas as pd
 from pathlib import Path
+import argparse
 
-def main():
+def main(ticker: str | None = None):
     print("\n=== ASSET ANALYST — ANALISI COMPLETA ===\n")
 
     # 1️⃣ Input ticker
-    ticker = input("Inserisci il ticker (es. AAPL): ").upper()
+    if ticker is None:
+        ticker = input("Inserisci il ticker (es. AAPL): ").upper()
+    else:
+        ticker = ticker.upper()
 
     # 2️⃣ Ingestion
     print("\n➡️  Scarico i bilanci...")
@@ -75,4 +79,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ticker", type=str, help="Ticker da analizzare (es. AAPL)")
+    args = parser.parse_args()
+    main(args.ticker)
