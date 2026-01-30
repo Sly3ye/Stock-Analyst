@@ -55,11 +55,14 @@ class FinancialCleaner:
     @staticmethod
     def _clean_dates(df: pd.DataFrame) -> pd.DataFrame:
         """
-        Converte 'date' in datetime e ordina il DataFrame per data crescente.
-        Se 'date' non esiste, non fa nulla (ma con yfinance c'è sempre).
+        Converte 'date' in datetime, forza UTC e rimuove timezone
+        per evitare mixed-timezone errors (pandas / Render).
         """
         if "date" in df.columns:
-            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+            df["date"] = (
+                pd.to_datetime(df["date"], errors="coerce", utc=True)
+                .dt.tz_convert(None)
+            )
             df = df.sort_values("date").reset_index(drop=True)
         return df
 
