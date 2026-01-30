@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parent
 FRONTEND_DIR = ROOT / "frontend"
 REPORTS_DIR = ROOT / "reports"
 
+FRONTEND_DIR.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
 app = FastAPI(title="Asset Analyst")
 
 app.mount("/reports", StaticFiles(directory=REPORTS_DIR), name="reports")
