@@ -61,7 +61,8 @@ Poi apri:
 http://127.0.0.1:8000/
 ```
 
-Inserisci il ticker e premi "Analizza". Il server esegue `main.py` e apre il PDF.
+Inserisci il ticker e premi "Analizza". Il server esegue `main.py` e il PDF
+viene mostrato nella pagina con opzioni per scaricarlo o aprirlo in una nuova finestra.
 
 ## Note su metriche e assunzioni
 - Le valutazioni sono per-share e dipendono da assunzioni conservative su crescita,
