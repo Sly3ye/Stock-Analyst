@@ -1,6 +1,8 @@
 import yfinance as yf
 import pandas as pd
 from pathlib import Path
+import time
+from yfinance.exceptions import YFRateLimitError
 
 class YFIngestor:
     """
@@ -61,20 +63,63 @@ class YFIngestor:
         print("\n✔️ Ingestion completata.\n")
 
         return is_df, bs_df, cf_df
+
+    def _try_get_info(self, t: yf.Ticker, attempts: int = 3, base_sleep: float = 1.5) -> dict:
+        last_err = None
+        for i in range(attempts):
+            try:
+                info = t.info
+                return info if isinstance(info, dict) else {}
+            except YFRateLimitError as err:
+                last_err = err
+                time.sleep(base_sleep * (2 ** i))
+            except Exception as err:
+                last_err = err
+                time.sleep(base_sleep)
+        if last_err is not None:
+            print("⚠️  Yahoo Finance rate limit or network error while fetching metadata. Continuing with partial data.")
+        return {}
+
+    def _try_get_fast_info(self, t: yf.Ticker) -> dict:
+        try:
+            fast_info = t.fast_info
+            return fast_info if isinstance(fast_info, dict) else {}
+        except Exception:
+            return {}
+
+    def _try_get_last_price(self, t: yf.Ticker) -> float | None:
+        try:
+            hist = t.history(period="5d", interval="1d", auto_adjust=False)
+            if hist is None or hist.empty:
+                return None
+            last_close = hist["Close"].iloc[-1]
+            if pd.isna(last_close):
+                return None
+            return float(last_close)
+        except Exception:
+            return None
     
     def get_report_metadata(self, ticker: str) -> dict:
         t = yf.Ticker(ticker)
-        info = t.info
+        info = self._try_get_info(t)
+        fast_info = self._try_get_fast_info(t)
 
         current_price = (
             info.get("currentPrice")
             or info.get("regularMarketPrice")
             or info.get("previousClose")
+            or fast_info.get("last_price")
+            or fast_info.get("last_close")
+            or fast_info.get("regular_market_price")
         )
+        if current_price is None:
+            current_price = self._try_get_last_price(t)
 
         company_name = (
             info.get("longName")
             or info.get("shortName")
+            or fast_info.get("shortName")
+            or fast_info.get("longName")
             or ticker
         )
 
@@ -83,7 +128,7 @@ class YFIngestor:
             "sector": info.get("sector"),
             "industry": info.get("industry"),
             "country": info.get("country"),
-            "market_cap": info.get("marketCap"),
+            "market_cap": info.get("marketCap") or fast_info.get("market_cap"),
             # fallback: revenue TTM dai financials se manca
             "revenue_ttm": info.get("totalRevenue"),
             "current_price": current_price,
