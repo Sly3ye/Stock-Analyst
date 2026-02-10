@@ -261,6 +261,27 @@
         background: #fafafa;
       }
 
+      .ai-summary {
+        margin-top: 14px;
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 12px 24px rgba(16, 16, 20, 0.08);
+        padding: 14px 16px;
+      }
+
+      .ai-summary h4 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .ai-summary p {
+        margin: 0;
+        color: var(--slate);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
       .viewer iframe {
         width: 100%;
         height: 520px;
@@ -322,15 +343,23 @@
           </p>
           <div class="cta fade-in delay-2">
             <span style="color: var(--muted); font-size: 0.95rem;">
-              Inserisci un ticker e avvia l'analisi.
+              Inserisci un'azienda e avvia l'analisi.
             </span>
           </div>
         </div>
         <div class="ticker-card fade-in delay-3">
           <h3>Avvia una nuova analisi</h3>
-          <p>Inserisci un ticker per creare un report PDF completo.</p>
+          <p>Seleziona un'azienda valida per creare un report PDF completo.</p>
           <form class="ticker-form" onsubmit="return analyzeTicker(event);">
-            <input type="text" placeholder="Es. SBUX" aria-label="Ticker" id="tickerInput" />
+            <input
+              type="text"
+              placeholder="Es. Apple Inc."
+              aria-label="Azienda"
+              id="companyInput"
+              list="companyList"
+              autocomplete="off"
+            />
+            <datalist id="companyList"></datalist>
             <button class="btn btn-primary" type="submit" id="analyzeBtn">Analizza</button>
           </form>
           <p id="status" style="margin: 10px 0 0; color: var(--muted); font-size: 0.9rem;"></p>
@@ -344,6 +373,10 @@
               <a class="btn btn-primary" id="downloadLink" href="#" download>Scarica PDF</a>
               <a class="btn btn-secondary" id="openLink" href="#" target="_blank" rel="noopener">Apri in nuova finestra</a>
             </div>
+          </div>
+          <div class="ai-summary" id="aiSummary">
+            <h4>Resoconto IA</h4>
+            <p id="aiSummaryText">Il resoconto verra generato dopo l'analisi.</p>
           </div>
         </div>
       </section>
@@ -414,17 +447,139 @@
       <footer>Asset Analyst · Report professionali basati su dati pubblici</footer>
     </div>
     <script>
-      function analyzeTicker(event) {
-        event.preventDefault();
-        var input = document.getElementById("tickerInput");
+      var COMPANY_RESULTS = [];
+      var COMPANY_MAP = {};
+      var COMPANY_LAST_QUERY = "";
+      var COMPANY_TIMER = null;
+
+      function populateCompanyList() {
+        var list = document.getElementById("companyList");
+        if (!list) return;
+        list.innerHTML = "";
+        COMPANY_RESULTS.forEach(function (item) {
+          var option = document.createElement("option");
+          option.value = item.name;
+          option.setAttribute("data-ticker", item.ticker);
+          option.label = item.ticker;
+          list.appendChild(option);
+        });
+      }
+
+      function getSelectedTicker() {
+        var input = document.getElementById("companyInput");
+        var list = document.getElementById("companyList");
+        if (!input || !list) return "";
+        var value = (input.value || "").trim();
+        if (!value) return "";
+        var option = list.querySelector('option[value="' + CSS.escape(value) + '"]');
+        return option ? (option.getAttribute("data-ticker") || "") : "";
+      }
+
+      function validateCompanyInput() {
+        var input = document.getElementById("companyInput");
         var status = document.getElementById("status");
         var button = document.getElementById("analyzeBtn");
         if (!input || !status || !button) return false;
-
-        var ticker = (input.value || "").trim().toUpperCase();
-        var valid = /^[A-Z0-9.-]{1,10}$/.test(ticker);
+        var value = (input.value || "").trim();
+        var ticker = getSelectedTicker();
+        var valid = Boolean(ticker);
+        if (!value) {
+          status.textContent = "";
+          button.disabled = true;
+          return false;
+        }
         if (!valid) {
-          status.textContent = "Inserisci un ticker valido (es. AAPL, SBUX).";
+          button.disabled = true;
+          return false;
+        }
+        status.textContent = "";
+        button.disabled = false;
+        return true;
+      }
+
+      function setCompanyResults(results) {
+        COMPANY_RESULTS = Array.isArray(results) ? results : [];
+        COMPANY_MAP = {};
+        COMPANY_RESULTS.forEach(function (item) {
+          if (item && item.name && item.ticker) {
+            COMPANY_MAP[item.name] = item.ticker;
+          }
+        });
+        populateCompanyList();
+      }
+
+      function parseJsonResponse(response, fallbackMessage) {
+        return response.text().then(function (text) {
+          try {
+            return JSON.parse(text || "{}");
+          } catch (err) {
+            if (!response.ok) {
+              throw new Error(text || fallbackMessage);
+            }
+            throw err;
+          }
+        });
+      }
+
+      function fetchCompanies(query) {
+        return fetch("/companies?query=" + encodeURIComponent(query), { method: "GET" })
+          .then(function (response) {
+            return parseJsonResponse(response, "Ricerca non disponibile.").then(function (data) {
+              if (!response.ok) {
+                throw new Error((data && data.detail) || "Ricerca non disponibile.");
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            return data.results || [];
+          });
+      }
+
+      function scheduleCompanySearch() {
+        var input = document.getElementById("companyInput");
+        var status = document.getElementById("status");
+        if (!input || !status) return;
+        var query = (input.value || "").trim();
+        if (query.length < 2) {
+          setCompanyResults([]);
+          status.textContent = "";
+          return;
+        }
+        if (query === COMPANY_LAST_QUERY) {
+          return;
+        }
+        if (COMPANY_TIMER) {
+          clearTimeout(COMPANY_TIMER);
+        }
+        COMPANY_TIMER = setTimeout(function () {
+          COMPANY_LAST_QUERY = query;
+          fetchCompanies(query)
+            .then(function (results) {
+              setCompanyResults(results);
+              if (!results.length) {
+                status.textContent = "Nessun risultato trovato.";
+              } else {
+                status.textContent = "";
+              }
+              validateCompanyInput();
+            })
+            .catch(function (err) {
+              setCompanyResults([]);
+              status.textContent = err.message || "Ricerca non disponibile.";
+            });
+        }, 350);
+      }
+
+      function analyzeTicker(event) {
+        event.preventDefault();
+        var input = document.getElementById("companyInput");
+        var status = document.getElementById("status");
+        var button = document.getElementById("analyzeBtn");
+        if (!input || !status || !button) return false;
+        var ticker = getSelectedTicker();
+        if (!ticker) {
+          status.textContent = "Seleziona un'azienda dalla lista suggerita.";
           input.focus();
           return false;
         }
@@ -462,6 +617,7 @@
         var title = document.getElementById("viewerTitle");
         var downloadLink = document.getElementById("downloadLink");
         var openLink = document.getElementById("openLink");
+        var summaryText = document.getElementById("aiSummaryText");
         if (!viewer || !frame || !title || !downloadLink || !openLink) return;
         title.textContent = "Report PDF · " + ticker;
         frame.src = url;
@@ -469,15 +625,56 @@
         openLink.href = url;
         viewer.style.display = "block";
         viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (summaryText) {
+          summaryText.textContent = "Generazione resoconto IA in corso...";
+        }
+        fetchAiSummary(ticker);
       }
 
       function closeViewer() {
         var viewer = document.getElementById("reportViewer");
         var frame = document.getElementById("reportFrame");
+        var summaryText = document.getElementById("aiSummaryText");
         if (!viewer || !frame) return;
         frame.src = "";
         viewer.style.display = "none";
+        if (summaryText) {
+          summaryText.textContent = "Il resoconto verra generato dopo l'analisi.";
+        }
       }
+
+      function fetchAiSummary(ticker) {
+        var summaryText = document.getElementById("aiSummaryText");
+        if (!summaryText) return;
+        fetch("/ai-summary?ticker=" + encodeURIComponent(ticker), { method: "GET" })
+          .then(function (response) {
+            return parseJsonResponse(response, "Errore durante il resoconto.").then(function (data) {
+              if (!response.ok) {
+                throw new Error((data && data.detail) || "Errore durante il resoconto.");
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            summaryText.textContent = data.summary || "Resoconto non disponibile.";
+          })
+          .catch(function (err) {
+            summaryText.textContent = err.message || "Resoconto non disponibile.";
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        var input = document.getElementById("companyInput");
+        if (input) {
+          input.addEventListener("input", function () {
+            scheduleCompanySearch();
+            validateCompanyInput();
+          });
+          input.addEventListener("blur", validateCompanyInput);
+          input.addEventListener("focus", scheduleCompanySearch);
+        }
+        validateCompanyInput();
+      });
     </script>
   </body>
 </html>
