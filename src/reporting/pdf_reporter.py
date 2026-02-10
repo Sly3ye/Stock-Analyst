@@ -39,6 +39,7 @@ class PDFReporter:
 
         self._add_title(story, styles, ticker)
         self._add_investment_snapshot(story, styles, info, results)
+        self._add_ai_summary(story, styles, results)
         self._add_scores_section(story, styles, results, ticker)
 
         self._add_company_profile(story, styles, info)
@@ -114,6 +115,15 @@ class PDFReporter:
         """
         story.append(Paragraph(text, styles["Normal"]))
         story.append(Spacer(1, 0.35 * inch))
+
+    def _add_ai_summary(self, story, styles, results):
+        summary = results.get("ai_summary")
+        if not summary:
+            return
+        story.append(Paragraph("<b>Resoconto IA (controllato)</b>", styles["Heading2"]))
+        story.append(Spacer(1, 0.1 * inch))
+        story.append(Paragraph(summary, styles["Normal"]))
+        story.append(Spacer(1, 0.25 * inch))
 
     def _add_scores_section(self, story, styles, results, ticker):
         story.append(Paragraph("<b>Profilo Sintetico – Scorecard</b>", styles["Heading2"]))

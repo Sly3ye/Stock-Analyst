@@ -4,11 +4,14 @@ from src.features.metrics import FinancialMetrics
 from src.analyst.analyst_engine import AnalystEngine
 from src.reporting.pdf_reporter import PDFReporter
 from src.reporting.assembler import ReportAssembler
+from src.reporting.ai_summary import generate_llm_summary
 
 import yfinance as yf
 import pandas as pd
 from pathlib import Path
 import argparse
+import json
+import time
 
 def main(ticker: str | None = None):
     print("\n=== ASSET ANALYST — ANALISI COMPLETA ===\n")
@@ -65,6 +68,12 @@ def main(ticker: str | None = None):
     ):
         results["upside"] = results["fair_value"] / results["current_price"] - 1.0
 
+    try:
+        results["ai_summary"] = generate_llm_summary(report_data, results)
+    except Exception as exc:
+        print(f"⚠️  Resoconto IA non disponibile: {exc}")
+        results["ai_summary"] = None
+
     # 6️⃣ Report PDF
     print("➡️  Generazione report PDF professionale...")
     reporter = PDFReporter()
@@ -74,8 +83,38 @@ def main(ticker: str | None = None):
         info=report_data,
         results=results
     )
+    _write_report_json(ticker, report_data, results)
     print("\n=== ANALISI COMPLETATA ===")
     print(f"Report PDF salvato in: reports/{ticker}_report.pdf\n")
+
+
+def _json_safe(value):
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if hasattr(value, "item"):
+        try:
+            return _json_safe(value.item())
+        except Exception:
+            pass
+    return str(value)
+
+
+def _write_report_json(ticker: str, info: dict, results: dict):
+    report_payload = {
+        "ticker": ticker,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "info": info or {},
+        "results": results or {},
+    }
+    reports_dir = Path("reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    output_path = reports_dir / f"{ticker}_report.json"
+    with output_path.open("w", encoding="utf-8") as handle:
+        json.dump(_json_safe(report_payload), handle, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
