@@ -110,20 +110,25 @@ class FinancialMetrics:
         ])
         inventory = find_field(["inventory"])
 
+        cost_of_revenue = find_field(["cost_of_revenue", "reconciled_cost_of_revenue"])
+
+        # Costruiamo le nuove metriche in blocco per evitare frammentazione DataFrame.
+        metrics = {}
+
         # ------------------ PROFITABILITY ------------------ #
         eps = 1e-6
 
-        df["roe"] = np.where(
+        metrics["roe"] = np.where(
             equity > eps,
             net_income / equity,
             np.nan
         )
-        df["roic"] = np.where(
+        metrics["roic"] = np.where(
             (equity + debt) > eps,
             operating_income / (equity + debt),
             np.nan
         )
-        df["debt_to_equity"] = np.where(
+        metrics["debt_to_equity"] = np.where(
             equity > eps,
             debt / equity,
             np.nan
@@ -139,29 +144,29 @@ class FinancialMetrics:
             debt - cash_total,
             np.nan
         )
-        df["net_debt"] = np.where(
+        metrics["net_debt"] = np.where(
             raw_net_debt.notna(),
             raw_net_debt,
             computed_net_debt
         )
 
         # ------------------ MARGINS ------------------ #
-        df["gross_margin"] = gross_profit / revenue
-        df["operating_margin"] = operating_income / revenue
-        df["net_margin"] = net_income / revenue
+        metrics["gross_margin"] = gross_profit / revenue
+        metrics["operating_margin"] = operating_income / revenue
+        metrics["net_margin"] = net_income / revenue
 
         # ------------------ CASH FLOW ------------------ #
-        df["fcf_margin"] = fcf / revenue
-        df["fcf_to_net_income"] = np.where(
+        metrics["fcf_margin"] = fcf / revenue
+        metrics["fcf_to_net_income"] = np.where(
             np.abs(net_income) > eps,
             fcf / net_income,
             np.nan
         )
 
         # ------------------ GROWTH ------------------ #
-        df["revenue_growth"] = revenue.pct_change()
-        df["net_income_growth"] = net_income.pct_change()
-        df["fcf_growth"] = fcf.pct_change()
+        metrics["revenue_growth"] = revenue.pct_change()
+        metrics["net_income_growth"] = net_income.pct_change()
+        metrics["fcf_growth"] = fcf.pct_change()
 
 
         def safe_cagr(series, years=3):
@@ -172,24 +177,24 @@ class FinancialMetrics:
                 np.nan
             )
 
-        df["revenue_cagr_3y"] = safe_cagr(revenue)
-        df["net_income_cagr_3y"] = safe_cagr(net_income)
-        df["fcf_cagr_3y"] = safe_cagr(fcf)
+        metrics["revenue_cagr_3y"] = safe_cagr(revenue)
+        metrics["net_income_cagr_3y"] = safe_cagr(net_income)
+        metrics["fcf_cagr_3y"] = safe_cagr(fcf)
 
         # ------------------ LEVERAGE ------------------ #
-        df["debt_to_assets"] = np.where(
+        metrics["debt_to_assets"] = np.where(
             total_assets > eps,
             debt / total_assets,
             np.nan
         )
 
         # ------------------ LIQUIDITY ------------------ #
-        df["current_ratio"] = np.where(
+        metrics["current_ratio"] = np.where(
             current_liabilities > eps,
             current_assets / current_liabilities,
             np.nan
         )
-        df["quick_ratio"] = np.where(
+        metrics["quick_ratio"] = np.where(
             current_liabilities > eps,
             (cash + receivables) / current_liabilities,
             np.nan
@@ -198,17 +203,17 @@ class FinancialMetrics:
         # ------------------ VALUATION ------------------ #
         shares = find_field(["ordinary_shares_number"])
 
-        df["book_value_per_share"] = np.where(
+        metrics["book_value_per_share"] = np.where(
             (equity > eps) & (shares > eps),
             equity / shares,
             np.nan
         )
-        df["earnings_per_share"] = np.where(
+        metrics["earnings_per_share"] = np.where(
             shares > eps,
             net_income / shares,
             np.nan
         )
-        df["fcf_per_share"] = np.where(
+        metrics["fcf_per_share"] = np.where(
             shares > eps,
             fcf / shares,
             np.nan
@@ -216,20 +221,26 @@ class FinancialMetrics:
 
 
         # ------------------ EFFICIENCY ------------------ #
-        df["asset_turnover"] = revenue / df["total_assets"]
-        df["inventory_turnover"] = np.where(
+        metrics["asset_turnover"] = np.where(
+            total_assets > eps,
+            revenue / total_assets,
+            np.nan
+        )
+        metrics["inventory_turnover"] = np.where(
             inventory > eps,
-            df["cost_of_revenue"] / inventory,
+            cost_of_revenue / inventory,
             np.nan
         )
 
-        df["receivables_turnover"] = np.where(
+        metrics["receivables_turnover"] = np.where(
             receivables > eps,
             revenue / receivables,
             np.nan
         )
-
-        return df
+        metrics_df = pd.DataFrame(metrics, index=df.index)
+        base_df = df.drop(columns=list(metrics_df.columns), errors="ignore")
+        out_df = pd.concat([base_df, metrics_df], axis=1)
+        return out_df.copy()
 
     # ---------------------------------------------------------
     # 3. SALVATAGGIO
